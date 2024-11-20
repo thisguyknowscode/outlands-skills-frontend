@@ -1,7 +1,7 @@
 'use client'
 
 import styled from '@emotion/styled'
-import { Box, Button, Paper, TextField } from '@mui/material'
+import { Box, Button, LinearProgress, Paper, TextField } from '@mui/material'
 import React, { useState } from 'react'
 import Markdown from 'react-markdown'
 
@@ -13,41 +13,66 @@ const StyledPaper = styled(Paper)`
 const StyledResponseContainer = styled(Box)`
 	border: 2px solid #999;
 	border-radius: 0.25rem;
-	padding: 1rem;
+	min-height: 8rem;
+	padding: 0.5rem 1rem;
+`
+
+const StyledHeadline = styled.h1`
+	margin: 2rem;
+	margin-top: 0;
+	padding: 0;
+	color: white;
+	text-shadow: 0 0 6px rgba(0, 0, 0, 0.75);
+`
+
+const StyledLinearProgress = styled(LinearProgress)`
+	top: 3.75rem;
 `
 
 export default function Home() {
 	const [question, setQuestion] = useState('')
-	const [answer, setAnswer] = useState('')
+	const [answer, setAnswer] = useState('Ask a question, get an answer.')
+	const [loading, setLoading] = useState(false)
 
 	const questionHandler = (ev: any) => {
-		ev.preventDefault()
-
 		setQuestion(ev.target.value)
 	}
 
 	const searchClickHandler = async () => {
-		const resp = await fetch('http://localhost:8080/dev/chat', {
-			method: 'POST',
-			body: JSON.stringify({ query: question })
-		})
+		setLoading(true)
+		setAnswer('')
 
-		const respJson = await resp.json()
+		try {
+			const resp = await fetch('http://localhost:8080/dev/chat', {
+				method: 'POST',
+				body: JSON.stringify({ query: question })
+			})
 
-		if (respJson?.length) {
-			setAnswer(respJson[0].response)
+			const respJson = await resp.json()
+
+			if (respJson?.length) {
+				setAnswer(respJson[0].response)
+			}
+		} catch (err) {
+			setAnswer('Oh no! Something went wrong. I\'m on it.')
+
+			console.error('searchClickHandler', err)
 		}
+
+		setLoading(false)
 	}
 
 	const resetClickHandler = () => {
 		setQuestion('')
+		setAnswer('')
 	}
 
 	return (
 		<Box>
+			<StyledHeadline>Outlands Skills AI</StyledHeadline>
 			<StyledPaper elevation={5}>
 				<StyledResponseContainer>
-					<Markdown>{answer}</Markdown>
+					{loading ? <StyledLinearProgress /> : (<Markdown>{answer}</Markdown>)}
 				</StyledResponseContainer>
 			</StyledPaper>
 			<StyledPaper elevation={5}>
